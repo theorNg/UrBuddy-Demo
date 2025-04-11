@@ -1,49 +1,47 @@
-import React from 'react';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+"use client";
 
-import { cookies } from 'next/headers';
-import db from '@/lib/supabase/db';
-import { redirect } from 'next/navigation';
-import DashboardSetup from '@/components/dashboard-setup/dashboard-setup';
-import { getUserSubscriptionStatus } from '@/lib/supabase/queries';
+import { useState } from "react";
+import { Schedule } from "@/components/Schedule";
+import { StudyPlan } from "@/components/StudyPlan";
+import { GPAPrediction } from "@/components/GPAPrediction";
+import { CustomPackage } from "@/components/CustomPackage";
+import { ChatInterface } from "@/components/ChatInterface";
+import { AdminDashboard } from "@/components/AdminDashboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const DashboardPage = async () => {
-  const supabase = createServerComponentClient({ cookies });
+export default function DashboardPage() {
+  const [userRole] = useState<"student" | "admin">("student"); // This would come from auth context in a real app
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  if (userRole === "admin") {
+    return <AdminDashboard />;
+  }
 
-  if (!user) return;
-
-  const workspace = await db.query.workspaces.findFirst({
-    where: (workspace, { eq }) => eq(workspace.workspaceOwner, user.id),
-  });
-
-  const { data: subscription, error: subscriptionError } =
-    await getUserSubscriptionStatus(user.id);
-
-  if (subscriptionError) return;
-
-  if (!workspace)
-    return (
-      <div
-        className="bg-background
-        h-screen
-        w-screen
-        flex
-        justify-center
-        items-center
-  "
-      >
-        <DashboardSetup
-          user={user}
-          subscription={subscription}
-        />
-      </div>
-    );
-
-  redirect(`/dashboard/${workspace.id}`);
-};
-
-export default DashboardPage;
+  return (
+    <div className="container mx-auto py-6">
+      <Tabs defaultValue="schedule" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          <TabsTrigger value="study-plan">Study Plan</TabsTrigger>
+          <TabsTrigger value="gpa">GPA Prediction</TabsTrigger>
+          <TabsTrigger value="chat">AI Chat</TabsTrigger>
+          <TabsTrigger value="package">Custom Package</TabsTrigger>
+        </TabsList>
+        <TabsContent value="schedule">
+          <Schedule />
+        </TabsContent>
+        <TabsContent value="study-plan">
+          <StudyPlan />
+        </TabsContent>
+        <TabsContent value="gpa">
+          <GPAPrediction />
+        </TabsContent>
+        <TabsContent value="chat">
+          <ChatInterface />
+        </TabsContent>
+        <TabsContent value="package">
+          <CustomPackage />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
